@@ -1,5 +1,7 @@
 from git import Repo
 import datetime
+from progress.bar import Bar
+import operator
 
 def getDirs(git_repo, since):
 	return git_repo.log('--since={}'.format(since), '--pretty=tformat:', '--name-only').split('\n')
@@ -7,7 +9,6 @@ def getDirs(git_repo, since):
 
 def getSHAs(git_repo, since):
 	commits = git_repo.log('--since={}'.format(since)).split('\n')
-
 	sha_list = []
 
 	for line in commits:
@@ -20,6 +21,7 @@ def getSHAs(git_repo, since):
 def getCommitsPerModule(commits_list):
 	# modules = []
 	commits_per_module = {}
+
 	for directory in commits_list:
 		splits = directory.split('/')
 		if splits[0] == 'nova' and len(splits[1].split('.')) == 1:
@@ -31,6 +33,37 @@ def getCommitsPerModule(commits_list):
 
 	return commits_per_module
 
+def getChurns(git_repo, sha_list):
+	churn_per_module = {}
+	bar = Bar('Getting chur per modules', max=(len(sha_list)-1))
+
+	for i in range(len(sha_list)-1):
+		diffInfo = git_repo.diff('{}..{}'.format(sha_list[i],sha_list[i+1])).split('\n')
+		for j in range(len(diffInfo)):
+			splits = diffInfo[j].split(' ')
+			module = ''
+			if splits[0] == 'diff':
+				dir_path = splits[2].split('/')
+				if dir_path[1] == 'nova':
+					module = dir_path[2]
+					if len(module.split('.')) == 2:
+						continue 
+					if module not in churn_per_module:
+						churn_per_module[module] = 0
+					k = j + 1
+					while True and k < len(diffInfo):
+						splits = diffInfo[k].split(' ')
+						if splits[0] == 'diff':
+							j = k
+							break
+						if splits[0] == '+' or splits[0] == '-':
+							churn_per_module[module] += 1
+						k += 1
+		bar.next()
+	# bar.finish()
+	return churn_per_module
+
+
 def main():
 	working_dir = 'C:\\Users\\suzan\\Documents\\git analysis\\nova'
 	months = 6
@@ -41,43 +74,31 @@ def main():
 	current_date = datetime.date.today()
 	since = current_date - datetime.timedelta(months * days)
 	
+	print('Getting Commited directories')
 	commit_dirs = getDirs(git_repo, since)
+	
+	print('Getting SHAs of each Commits')
 	sha_list = getSHAs(git_repo, since)
 	
+	print('Getting Commit per modules')
 	commits_per_module = getCommitsPerModule(commit_dirs)
 
+	churn_per_module = getChurns(git_repo, sha_list)
 
-	churn_per_module = {}
 
-	for i in range(len(sha_list)-1):
-		diffInfo = git_repo.diff('{}..{}'.format(sha_list[i],sha_list[i+1])).split('\n')
-		# print(i)
-		for j in range(len(diffInfo)):
-			splits = diffInfo[j].split(' ')
-			module = ''
-			if splits[0] == 'diff':
-				# print(j)
-				dir_path = splits[2].split('/')
-				if dir_path[1] == 'nova':
-					module = dir_path[2]
-					if len(module.split('.')) == 2:
-						continue 
-					if module not in churn_per_module:
-						churn_per_module[module] = 0
-					k = j + 1
-					while True and k < len(diffInfo):
-						splits = diffInfo[k].split(' ')		
-						# print(splits)	
-						if splits[0] == 'diff':
-							j = k
-							break
-						if splits[0] == '+' or splits[0] == '-':
-							churn_per_module[module] += 1
-						k += 1
-					# # print(j)
-		# break
-	# print(len(sha_list))
-	print(churn_per_module)
+	# sort the commits_per_module by number of commits and get top 12
+	sorted_module_commit = dict(sorted(commits_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
+
+	print('Top modules with highest number of commits:')
+	for module in sorted_module_commit.keys():
+		print(' ' * 2 + module)
+
+	# sort the churn_per_module by number of commits and get top 12	
+	sorted_module_churn = dict(sorted(churn_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
+
+	print('Top modules with highest number of churns:')
+	for module in sorted_module_churn.keys():
+		print(' ' * 2 + module)
 
 if __name__ == '__main__':
 	main()
