@@ -2,6 +2,7 @@ from git import Repo
 import datetime
 from progress.bar import Bar
 import operator
+import sys
 
 def getDirs(git_repo, since):
 	return git_repo.log('--since={}'.format(since), '--pretty=tformat:', '--name-only').split('\n')
@@ -18,14 +19,13 @@ def getSHAs(git_repo, since):
 
 	return sha_list
 
-def getCommitsPerModule(commits_list):
-	# modules = []
+def getCommitsPerModule(commits_list, dir_to_search):
 	commits_per_module = {}
 
+	# parse the dir path and get module names and the number of commits per module
 	for directory in commits_list:
 		splits = directory.split('/')
-		if splits[0] == 'nova' and len(splits[1].split('.')) == 1:
-			# modules.append(splits[1])
+		if splits[0] == dir_to_search and len(splits[1].split('.')) == 1:
 			if splits[1] in commits_per_module:
 				commits_per_module[splits[1]] += 1
 			else:
@@ -33,10 +33,11 @@ def getCommitsPerModule(commits_list):
 
 	return commits_per_module
 
-def getChurns(git_repo, sha_list):
+def getChurns(git_repo, sha_list, dir_to_search):
 	churn_per_module = {}
 	bar = Bar('Getting chur per modules', max=(len(sha_list)-1))
 
+	# find the diff between two sha and count the number of changes per module
 	for i in range(len(sha_list)-1):
 		diffInfo = git_repo.diff('{}..{}'.format(sha_list[i],sha_list[i+1])).split('\n')
 		for j in range(len(diffInfo)):
@@ -44,7 +45,7 @@ def getChurns(git_repo, sha_list):
 			module = ''
 			if splits[0] == 'diff':
 				dir_path = splits[2].split('/')
-				if dir_path[1] == 'nova':
+				if dir_path[1] == dir_to_search:
 					module = dir_path[2]
 					if len(module.split('.')) == 2:
 						continue 
@@ -60,12 +61,18 @@ def getChurns(git_repo, sha_list):
 							churn_per_module[module] += 1
 						k += 1
 		bar.next()
-	# bar.finish()
+	bar.finish()
 	return churn_per_module
 
 
 def main():
-	working_dir = 'C:\\Users\\suzan\\Documents\\git analysis\\nova'
+	try:
+		working_dir = sys.argv[1]
+		dir_to_search = sys.argv[2]
+	except Exception as e:
+		print('Missing an Argument!!')
+		return
+
 	months = 6
 	days = 30
 
@@ -81,10 +88,9 @@ def main():
 	sha_list = getSHAs(git_repo, since)
 	
 	print('Getting Commit per modules')
-	commits_per_module = getCommitsPerModule(commit_dirs)
+	commits_per_module = getCommitsPerModule(commit_dirs, dir_to_search)
 
-	churn_per_module = getChurns(git_repo, sha_list)
-
+	churn_per_module = getChurns(git_repo, sha_list, dir_to_search)
 
 	# sort the commits_per_module by number of commits and get top 12
 	sorted_module_commit = dict(sorted(commits_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
@@ -93,6 +99,8 @@ def main():
 	for module in sorted_module_commit.keys():
 		print(' ' * 2 + module)
 
+	print()
+	
 	# sort the churn_per_module by number of commits and get top 12	
 	sorted_module_churn = dict(sorted(churn_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
 
