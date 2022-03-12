@@ -4,6 +4,8 @@ from progress.bar import Bar
 import operator
 import sys
 
+
+
 def getDirs(git_repo, since):
 	return git_repo.log('--since={}'.format(since), '--pretty=tformat:', '--name-only').split('\n')
 
@@ -100,7 +102,7 @@ def main():
 		print(' ' * 2 + module)
 
 	print()
-	
+
 	# sort the churn_per_module by number of commits and get top 12	
 	sorted_module_churn = dict(sorted(churn_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
 
