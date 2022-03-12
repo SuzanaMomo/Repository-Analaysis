@@ -17,6 +17,19 @@ def getSHAs(git_repo, since):
 
 	return sha_list
 
+def getCommitsPerModule(commits_list):
+	# modules = []
+	commits_per_module = {}
+	for directory in commits_list:
+		splits = directory.split('/')
+		if splits[0] == 'nova' and len(splits[1].split('.')) == 1:
+			# modules.append(splits[1])
+			if splits[1] in commits_per_module:
+				commits_per_module[splits[1]] += 1
+			else:
+				commits_per_module[splits[1]] = 1
+
+	return commits_per_module
 
 def main():
 	working_dir = 'C:\\Users\\suzan\\Documents\\git analysis\\nova'
@@ -31,22 +44,40 @@ def main():
 	commit_dirs = getDirs(git_repo, since)
 	sha_list = getSHAs(git_repo, since)
 	
-	modules = []
-	commits_per_module = {}
-	for directory in commit_dirs:
-		splits = directory.split('/')
-		if splits[0] == 'nova' and len(splits[1].split('.')) == 1:
-			modules.append(splits[1])
+	commits_per_module = getCommitsPerModule(commit_dirs)
 
-			if splits[1] in commits_per_module:
-				commits_per_module[splits[1]] += 1
-			else:
-				commits_per_module[splits[1]] = 1
 
-	print(commits_per_module)
-	# print('{}...{}'.format(sha_list[1],sha_list[3]))
-	# diffs = git_repo.diff('{}..{}'.format(sha_list[1],sha_list[3]))
-	# print(diffs)
+	churn_per_module = {}
+
+	for i in range(len(sha_list)-1):
+		diffInfo = git_repo.diff('{}..{}'.format(sha_list[i],sha_list[i+1])).split('\n')
+		# print(i)
+		for j in range(len(diffInfo)):
+			splits = diffInfo[j].split(' ')
+			module = ''
+			if splits[0] == 'diff':
+				# print(j)
+				dir_path = splits[2].split('/')
+				if dir_path[1] == 'nova':
+					module = dir_path[2]
+					if len(module.split('.')) == 2:
+						continue 
+					if module not in churn_per_module:
+						churn_per_module[module] = 0
+					k = j + 1
+					while True and k < len(diffInfo):
+						splits = diffInfo[k].split(' ')		
+						# print(splits)	
+						if splits[0] == 'diff':
+							j = k
+							break
+						if splits[0] == '+' or splits[0] == '-':
+							churn_per_module[module] += 1
+						k += 1
+					# # print(j)
+		# break
+	# print(len(sha_list))
+	print(churn_per_module)
 
 if __name__ == '__main__':
 	main()
