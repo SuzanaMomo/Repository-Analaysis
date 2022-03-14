@@ -5,7 +5,6 @@ import operator
 import sys
 
 
-
 def getDirs(git_repo, since):
 	return git_repo.log('--since={}'.format(since), '--pretty=tformat:', '--name-only').split('\n')
 
@@ -93,7 +92,7 @@ def main():
 	commits_per_module = getCommitsPerModule(commit_dirs, dir_to_search)
 
 	churn_per_module = getChurns(git_repo, sha_list, dir_to_search)
-
+	
 	# sort the commits_per_module by number of commits and get top 12
 	sorted_module_commit = dict(sorted(commits_per_module.items(), key=operator.itemgetter(1),reverse=True)[:12])
 
@@ -109,6 +108,7 @@ def main():
 	print('Top modules with highest number of churns:')
 	for module in sorted_module_churn.keys():
 		print(' ' * 2 + module)
+
 
 if __name__ == '__main__':
 	main()
