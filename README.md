@@ -15,6 +15,7 @@ pip install progress
 
 In order to use the program, you will need to provide it with two arguments. The first argument is the relative location of the git repository containing .git  and the second argument is the name of the directory you want to analyze. For example, for the following working directory we want to analyze working_dir/nova/nova
 
+```
 working_dir
     |_ repo_analysis
        |_ main.py
@@ -25,7 +26,7 @@ working_dir
        |_ doc
        |_ etc
        |_ nova
-
+```
 We will use the following command to call our program
 
 ```bash
