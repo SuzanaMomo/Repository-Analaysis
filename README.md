@@ -1,6 +1,6 @@
 # Analysis GIT Repository
 
-This Program analysis commits in a git repo and finds the top 12 modified modules in a directory over the past 6 months
+This Program analyzes commits in a git repository and finds the top 12 actively modified modules in a directory over the past 6 months.
 
 ## Installation
 
@@ -19,23 +19,23 @@ working_dir
     |_ repo_analysis
        |_ main.py
        |_ README.md
-	|_ nova
-	   |_ .git
-	   |_ api-guide
-	   |_ doc
-	   |_ etc
-	   |_ nova
+    |_ nova
+       |_ .git
+       |_ api-guide
+       |_ doc
+       |_ etc
+       |_ nova
 
-We will use the following command line to call our program
+We will use the following command to call our program
 
 ```bash
 python main.py ../nova nova
 ```
 
-Getting churns per commit takes time. Hence, if the progress bar doesn't show up in your terminal for any reason, please wait it is not stuck.
+Getting churns per commit takes time. Hence, if the progress bar doesn't show up in your terminal for any reason, please wait. It is not stuck.
 
 ## Output
-The program will print out two lists of modules. The first list will show all modules with highest number of commits and the second list outputs the modules with highest churns
+The program will print out two lists of modules. The first list will show all the modules with the highest number of commits and the second list outputs the modules with the highest churns.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
